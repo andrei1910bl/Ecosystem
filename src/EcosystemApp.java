@@ -7,12 +7,15 @@ public class EcosystemApp {
     private static final List<Plant> plants = new ArrayList<>();
     private static final List<Animal> animals = new ArrayList<>();
     private static String ecosystemFileName;
+    private static int climateChoice;
+    private static int rainCheckFrequency;
+
 
     public static void main(String[] args) {
         clearConsole();
         System.out.println("Добро пожаловать в симуляцию экосистемы! \n" +
                 "Уважаемый пользователь, представь что ты создаешь свой остров, \n" +
-                "с озером в середине, который можешь населить любыми животными или растениями, \n" +
+                "с водоемом, который можешь населить любыми животными или растениями, \n" +
                 "которые будут жить и выживать самостоятельно! Используя твои параметры, которые \n" +
                 "укажешь перед запуском (такие как: кол-во дней существования экосистемы,  уровень воды в озере), \n" +
                 "программа укажет тебе как смогла развиться твоя экосистема). \n" +
@@ -75,7 +78,35 @@ public class EcosystemApp {
             String choice = scanner.nextLine();
             switch (choice) {
                 case "1":
-                    System.out.println("");
+                    System.out.println("Главный параметр отвечающий за существование экосистемы – это уровень воды в озере,\n" +
+                            " ни одно животное или растение в экосистеме не сможет прожить ни дня без воды. Перед запуском экосистемы, \n" +
+                            "пользователю будет предложено выбрать уровень воды в озере (в процентах), чем больше уровень воды, тем больше\n" +
+                            "шансов на выживание у видов).\n" +
+                            "Но не волнуйтесь, вода в озере – восполняемый параметр, а если быть точнее, то в программе предусмотрена логика \n" +
+                            "дождей, и каждый 10-й день существования будет проверяться условие, пойдет ли дождь (шанс выпадения осадков – 50%).\n" +
+                            "Если же дождь пошел, то уровень воды в озере поднимется на 40% от текущего уровня (уровень воды не сможет подняться " +
+                            "больше 100 процентов).\n" +
+                            " \n" +
+                            "Также  в экосистему пользователь может добавить различные виды животных и растений, которым нужно будет задать параметры:\n" +
+                            "Для растений: крупное/мелкое, кол-во, его наименование.\n" +
+                            "Для животных: травоядное/хищное, крупное/мелкое, кол-во, его наименование.\n" +
+                            "\n" +
+                            "Растение будет существовать, пока уровень воды будет выше нуля, а также количество вида будет увеличиваться на одну \n" +
+                            "единицу (+1) с каждым выпадением осадков. Частота выпадения осадков зависит от выбора климата: 1. Умеренный (осадки \n" +
+                            "могут выпасть раз в 10 дней), 2. Тропический ( раз в 5 дней), 3. Экваториальный (раз в 15 дней).\n" +
+                            "Для существования животных логика сложнее, чем у растений. Как указанно ранее животные делятся по классу питания \n" +
+                            "и размеру. Размер животного влияет на его изначальное количество дней, которое оно может прожить без еды (мелкое: 2 дня; \n" +
+                            "крупное: 4 дня), а также на уровень насыщаемости. Животное будет есть только в том случае, если оно голодно. Голодным \n" +
+                            "животное становится, когда у него остается 1 день жизни. После оно начинает искать еду и питается в соответствии с пищевой \n" +
+                            "цепью. Рассмотрим пищевую цепь:\n" +
+                            "Крупный хищник питается: крупным травоядным (4), мелким травоядным (2), мелким хищником (2))\n" +
+                            "Мелкий хищник питается: мелким травоядным (4)\n" +
+                            "Крупное травоядное питается: крупным растением (6), мелким растением (1)\n" +
+                            "Мелкое травоядное питается: крупным растением (9), мелким растением (3)\n" +
+                            "P.s. в скобках указано сколько дней жизни получает животное, съев растение .\n" +
+                            "\n" +
+                            "Также в экосистеме предусмотрена возможность размножения животных, чтобы они могли размножится, нужно чтобы выполнялось \n" +
+                            "следующее условие: животное поело и его количество больше единицы. \n");
                     break;
                 case "2":
                     clearConsole();
@@ -217,23 +248,26 @@ public class EcosystemApp {
         System.out.println("Растения:");
         for (Plant plant : plants) {
             System.out.println(plant);
+            logToFile(String.valueOf(plant));
         }
         System.out.println("Животные:");
         for (Animal animal : animals) {
             System.out.println(animal);
+            logToFile(String.valueOf(animal));
         }
     }
 
     private static void runEcosystem() {
         System.out.println("Введите количество дней существования экосистемы:");
         int days = Integer.parseInt(scanner.nextLine());
+        chooseClimate();
         System.out.println("Выберите уровень воды в озере (1-100%):");
         double waterLevel = Double.parseDouble(scanner.nextLine()) / 100.0;
-
 
         for (int day = 0; day < days; day++) {
             if (waterLevel <= 0) {
                 System.out.println("Уровень воды достиг нуля. Экосистема не может продолжать существование.");
+                logToFile("Уровень воды достиг нуля. Экосистема не может продолжать существование.");
                 break;
             }
             interactSpecies(day, animals, plants);
@@ -241,10 +275,35 @@ public class EcosystemApp {
             checkRain(day, waterLevel, plants);
             removeDeadSpecies();
         }
-        System.out.println("По истечению " + days + " дней, состояние экосистемы составило:");
+        System.out.println("На последний день существования экосистемы, ее состояние составило:");
         showEcosystemStatus();
     }
+    private static void chooseClimate() {
+        System.out.println("Выберите климат существования животных:");
+        System.out.println("1. Умеренный");
+        System.out.println("2. Тропический");
+        System.out.println("3. Экваториальный");
 
+        while (true) {
+            String choice = scanner.nextLine();
+            if (choice.equals("1")) {
+                climateChoice = 1;
+                rainCheckFrequency = 10; // Проверка на дождь раз в 10 дней
+                break;
+            } else if (choice.equals("2")) {
+                climateChoice = 2;
+                rainCheckFrequency = 5; // Проверка на дождь раз в 5 дней
+                break;
+            } else if (choice.equals("3")) {
+                climateChoice = 3;
+                rainCheckFrequency = 15; // Проверка на дождь каждые 15 дней
+                break;
+            } else {
+                System.out.println("Некорректный ввод, попробуйте снова.");
+            }
+        }
+
+    }
     private static double calculateWaterUsage(List<Animal> animals, List<Plant> plants) {
         double totalWaterUsage = 0.0;
         for (Plant plant : plants) {
@@ -264,7 +323,7 @@ public class EcosystemApp {
         return totalWaterUsage;
     }
     private static void checkRain(int day, double waterLevel, List<Plant> plants) {
-        if (day % 10 == 0 && day !=0) {
+        if (day % rainCheckFrequency == 0 && day != 0) {
             boolean increaseWater = new Random().nextBoolean();
             if (increaseWater) {
                 double increaseAmount = waterLevel * 0.4;
@@ -277,8 +336,8 @@ public class EcosystemApp {
                 }
                 logToFile("После дождя выросли:");
                 for (Plant plant : plants) {
-                    plant.increaseQuantity(+1);
-                    logToFile(plant.getName() + " +1");
+                    plant.increaseQuantity(plant.getQuantity());
+                    logToFile(plant.getName() +" + " + plant.getQuantity());
                 }
             } else {
                 logToFile("Дождь не пошел, текущий уровень воды: " + waterLevel*100 + "%");
@@ -307,33 +366,53 @@ public class EcosystemApp {
             if (animal.getType().equalsIgnoreCase("травоядное") && animal.getRemainingLifeDays() == 1) { // сначала обрабатываем травоядных
                     for (Plant plant : plants) {
                         if (animal.getSize().equalsIgnoreCase("мелкое") && plant.getSize().equalsIgnoreCase("мелкое")) {
-                            plant.increaseQuantity(-1);
-                            animal.setRemainingLifeDays(3); // 3 дня жизни
+                           if (plant.getQuantity() - animal.getQuantity()<=0){
+                               animal.increaseQuantity(plant.getQuantity());
+                               plant.increaseQuantity(0);
+                           }else {
+                               plant.increaseQuantity(-animal.getQuantity());
+                               animal.setRemainingLifeDays(3); // 3 дня жизни
+                           }
                             fedAnimals.add(animal);
                             hasEaten = true;
-                            logToFile(animal.getName() + " (тип: " + animal.getType() + ", размер: " + animal.getSize() + ") съел мелкое растение. Получено 3 дня жизни.");
+                            logToFile(animal.getName() + " (тип: " + animal.getType() + ", размер: " + animal.getSize() + ", кол-во: " + animal.getQuantity() + ") съел мелкое растение " + plant.getName() + "(осталось: " +plant.getQuantity()+"). Получено 3 дня жизни.");
                             break;
                         } else if (animal.getSize().equalsIgnoreCase("мелкое") && plant.getSize().equalsIgnoreCase("крупное")) {
-                            plant.increaseQuantity(-1);
-                            animal.setRemainingLifeDays(9); // 2 дня жизни за крупное растение
+                            if (plant.getQuantity() - animal.getQuantity()<=0){
+                                animal.increaseQuantity(plant.getQuantity());
+                                plant.increaseQuantity(0);
+                            }else {
+                                plant.increaseQuantity(-animal.getQuantity());
+                                animal.setRemainingLifeDays(9); // 2 дня жизни за крупное растение
+                            }
                             fedAnimals.add(animal);
                             hasEaten = true;
-                            logToFile(animal.getName() + " (тип: " + animal.getType() + ", размер: " + animal.getSize() + ") съел крупное растение. Получено 9 дня жизни.");
+                            logToFile(animal.getName() + " (тип: " + animal.getType() + ", размер: " + animal.getSize()+ ", кол-во: " + animal.getQuantity() + ") съел крупное растение " + plant.getName() + "(осталось: " +plant.getQuantity()+").  Получено 9 дней жизни.");
                             break;
                         } else if (animal.getSize().equalsIgnoreCase("крупное")) {
                             if (plant.getSize().equalsIgnoreCase("мелкое")) {
-                                plant.increaseQuantity(-1);
-                                animal.setRemainingLifeDays(1); // 1 день жизни
+                                if (plant.getQuantity() - animal.getQuantity()<=0){
+                                    animal.increaseQuantity(plant.getQuantity());
+                                    plant.increaseQuantity(0);
+                                }else {
+                                    plant.increaseQuantity(-animal.getQuantity());
+                                    animal.setRemainingLifeDays(1); // 1 день жизни
+                                }
                                 fedAnimals.add(animal);
                                 hasEaten = true;
-                                logToFile(animal.getName() + " (тип: " + animal.getType() + ", размер: " + animal.getSize() + ") съел мелкое растение. Получено 1 день жизни.");
+                                logToFile(animal.getName() + " (тип: " + animal.getType() + ", размер: " + animal.getSize() + ", кол-во: " + animal.getQuantity() + ") съел мелкое растение " + plant.getName() + "(осталось: " +plant.getQuantity()+"). Получено 1 день жизни.");
                                 break;
                             } else if (plant.getSize().equalsIgnoreCase("крупное")) {
-                                plant.increaseQuantity(-1);
-                                animal.setRemainingLifeDays(6); // 9 дней жизни
+                                if (plant.getQuantity() - animal.getQuantity()<=0){
+                                    animal.increaseQuantity(plant.getQuantity());
+                                    plant.increaseQuantity(0);
+                                }else {
+                                    plant.increaseQuantity(-animal.getQuantity());
+                                    animal.setRemainingLifeDays(6); // 9 дней жизни
+                                }
                                 fedAnimals.add(animal);
                                 hasEaten = true;
-                                logToFile(animal.getName() + " (тип: " + animal.getType() + ", размер: " + animal.getSize() + ") съел крупное растение. Получено 6 дней жизни.");
+                                logToFile(animal.getName() + " (тип: " + animal.getType() + ", размер: " + animal.getSize()+ ", кол-во: " + animal.getQuantity() + ") съел крупное растение " + plant.getName() + "(осталось: " +plant.getQuantity()+"). Получено 6 дней жизни.");
                                 break;
                             }
                         }
@@ -348,35 +427,55 @@ public class EcosystemApp {
                 for (Animal prey : animals) {
                     if (prey != animal && prey.getQuantity() > 0) { // Проверяем, что это не само животное
                         if (animal.getSize().equalsIgnoreCase("мелкое") && prey.getType().equalsIgnoreCase("травоядное") && prey.getSize().equalsIgnoreCase("мелкое")) {
-                            prey.increaseQuantity(-1);
-                            animal.setRemainingLifeDays(4); // 4 дня жизни за мелкое травоядное
+                            if (prey.getQuantity() - animal.getQuantity()<=0){
+                                animal.increaseQuantity(prey.getQuantity());
+                                prey.increaseQuantity(0);
+                            }else {
+                                prey.increaseQuantity(-animal.getQuantity());
+                                animal.setRemainingLifeDays(4); // 4 дня жизни за мелкое травоядное
+                            }
                             fedAnimals.add(animal);
                             hasEaten = true;
-                            logToFile(animal.getName() + " (тип: " + animal.getType() + ", размер: " + animal.getSize() + ") съел мелкое травоядное. Получено 4 дня жизни.");
+                            logToFile(animal.getName() + " (тип: " + animal.getType() + ", размер: " + animal.getSize() + ", кол-во: " + animal.getQuantity() + ") съел мелкое травоядное " + prey.getName() + "(осталось: " + prey.getQuantity()+"). Получено 4 дня жизни.");
                             break;
                         } else if (animal.getSize().equalsIgnoreCase("крупное")) {
                             if (prey.getType().equalsIgnoreCase("травоядное")) {
                                 if (prey.getSize().equalsIgnoreCase("крупное")) {
-                                    prey.increaseQuantity(-1);
-                                    animal.setRemainingLifeDays(4); // 4 дня жизни за крупное травоядное
+                                    if (prey.getQuantity() - animal.getQuantity()<=0){
+                                        animal.increaseQuantity(prey.getQuantity());
+                                        prey.increaseQuantity(0);
+                                    }else {
+                                        prey.increaseQuantity(-animal.getQuantity());
+                                        animal.setRemainingLifeDays(4); // 4 дня жизни за крупное травоядное
+                                    }
                                     fedAnimals.add(animal);
                                     hasEaten = true;
-                                    logToFile(animal.getName() + " (тип: " + animal.getType() + ", размер: " + animal.getSize() + ") съел крупное травоядное. Получено 4 дня жизни.");
+                                    logToFile(animal.getName() + " (тип: " + animal.getType() + ", размер: " + animal.getSize() + ", кол-во: " + animal.getQuantity() + ") съел крупное травоядное " + prey.getName() + "(осталось: " + prey.getQuantity()+"). Получено 4 дня жизни.");
                                     break;
                                 } else if (prey.getSize().equalsIgnoreCase("мелкое")) {
-                                    prey.increaseQuantity(-1);
-                                    animal.setRemainingLifeDays(2); // 2 дня жизни за мелкое травоядное
+                                    if (prey.getQuantity() - animal.getQuantity()<=0){
+                                        animal.increaseQuantity(prey.getQuantity());
+                                        prey.increaseQuantity(0);
+                                    }else {
+                                        prey.increaseQuantity(-animal.getQuantity());
+                                        animal.setRemainingLifeDays(2); // 2 дня жизни за мелкое травоядное
+                                    }
                                     fedAnimals.add(animal);
                                     hasEaten = true;
-                                    logToFile(animal.getName() + " (тип: " + animal.getType() + ", размер: " + animal.getSize() + ") съел мелкое травоядное. Получено 2 дня жизни.");
+                                    logToFile(animal.getName() + " (тип: " + animal.getType() + ", размер: " + animal.getSize() + ", кол-во: " + animal.getQuantity() + ") съел мелкое травоядное " + prey.getName() + "(осталось: " + prey.getQuantity()+"). Получено 2 дня жизни.");
                                     break;
                                 }
                             } else if (prey.getType().equalsIgnoreCase("хищное") && prey.getSize().equalsIgnoreCase("мелкое")) {
-                                prey.increaseQuantity(-1);
-                                animal.setRemainingLifeDays(2); // 2 дня жизни за мелкое хищное
+                                if (prey.getQuantity() - animal.getQuantity()<=0){
+                                    animal.increaseQuantity(prey.getQuantity());
+                                    prey.increaseQuantity(0);
+                                }else {
+                                    prey.increaseQuantity(-animal.getQuantity());
+                                    animal.setRemainingLifeDays(2); // 2 дня жизни за мелкое хищное
+                                }
                                 fedAnimals.add(animal);
                                 hasEaten = true;
-                                logToFile(animal.getName() + " (тип: " + animal.getType() + ", размер: " + animal.getSize() + ") съел мелкое хищное. Получено 2 дня жизни.");
+                                logToFile(animal.getName() + " (тип: " + animal.getType() + ", размер: " + animal.getSize() + ", кол-во: " + animal.getQuantity() + ") съел мелкое хищное " + prey.getName() + "(осталось: " + prey.getQuantity()+"). Получено 2 дня жизни.");
                                 break;
                             }
                         }
@@ -385,16 +484,16 @@ public class EcosystemApp {
             }
         }
         for (Animal animal : animals) {
-            if (!hasEaten) { // если животное не поело, уменьшаем дни жизни
+            if (!fedAnimals.contains(animal) && animal.getQuantity() > 0) {
                 animal.decreaseLifeDays();
-                logToFile(animal.getName() + " не смог поесть и потерял день жизни.");
+                logToFile(animal.getName() + " (кол-во: " + animal.getQuantity() +") не смог поесть и потерял день жизни.");
             }
         }
         // проверка, нужно ли удалить животное
         for (Animal animal : animals) {
             if (animal.getRemainingLifeDays() <= 0 && !animal.isLogged()) {
                 toRemove.add(animal); // Добавляем в список на удаление
-                logToFile("Животное "+ animal.getName() + " умерло так как закончились дни жизни.");
+                logToFile("Животное "+ animal.getName() + " было удалено, так как закончились дни жизни.");
                 animal.setLogged(true); // Устанавливаем флаг, что сообщение о смерти залогировано
             }
 
@@ -405,9 +504,10 @@ public class EcosystemApp {
         for (Animal animal : fedAnimals) {
             if (animal.getQuantity() > 1) {
                 logToFile("Вид: " + animal.getName() + " размножился, +1");
-                animal.increaseQuantity(1);
+                animal.increaseQuantity(+1);
             }
         }
+
     }
 
     private static void removeDeadSpecies() {

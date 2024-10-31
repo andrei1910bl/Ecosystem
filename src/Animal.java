@@ -40,7 +40,7 @@ public class Animal {
     }
 
     public void increaseQuantity(int amount) {
-        this.quantity += amount;
+        this.quantity = amount;
     }
     public int getRemainingLifeDays() {
         return remainingLifeDays;
